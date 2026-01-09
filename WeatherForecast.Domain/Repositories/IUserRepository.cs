@@ -13,7 +13,7 @@ public interface IUserRepository
     /// </summary>
     /// <param name="username">The username of the user to get.</param>
     /// <returns>The user with the specified username.</returns>
-    Task<User> GetByUsernameAsync(string username);
+    Task<User?> GetByUsernameAsync(string username);
     
     /// <summary>
     /// Checks if a user exists by their username.

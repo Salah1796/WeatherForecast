@@ -12,5 +12,5 @@ public interface IWeatherRepository
     /// </summary>
     /// <param name="city">The city to get the weather forecast for.</param>
     /// <returns>The weather forecast for the specified city.</returns>
-    Task<WeatherForecastValueObject> GetByCityAsync(string city);
+    Task<WeatherForecastValueObject?> GetByCityAsync(string city);
 }

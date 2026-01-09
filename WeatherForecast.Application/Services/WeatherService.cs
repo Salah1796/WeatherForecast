@@ -5,7 +5,6 @@ using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
 using WeatherForecast.Domain.Repositories;
-using WeatherForecastValueObject = WeatherForecast.Domain.ValueObjects.WeatherForecast;
 
 namespace WeatherForecast.Application.Services;
 
