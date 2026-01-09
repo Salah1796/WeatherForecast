@@ -1,12 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <EmbeddedResource Include="Data\weather-data.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\WeatherForecast.Domain\WeatherForecast.Domain.csproj" />
     <ProjectReference Include="..\WeatherForecast.Application\WeatherForecast.Application.csproj" />
   </ItemGroup>

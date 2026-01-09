@@ -1,4 +1,3 @@
-using BCrypt.Net;
 using WeatherForecast.Application.Interfaces;
 
 namespace WeatherForecast.Infrastructure.Services;

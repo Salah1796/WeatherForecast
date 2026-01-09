@@ -34,7 +34,15 @@ public class MockWeatherRepository : IWeatherRepository
         }
 
         var jsonContent = File.ReadAllText(jsonPath);
-        var weatherItems = JsonSerializer.Deserialize<List<WeatherForecastDto>>(jsonContent);
+        
+        if (string.IsNullOrWhiteSpace(jsonContent))
+        {
+            _logger?.LogError("Weather data file is empty at path: {JsonPath}", jsonPath);
+            return;
+        }
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var weatherItems = JsonSerializer.Deserialize<List<WeatherForecastDto>>(jsonContent, options);
         if (weatherItems == null || weatherItems.Count == 0)
         {
             _logger?.LogError("No weather data found in the JSON file at path: {JsonPath}", jsonPath);

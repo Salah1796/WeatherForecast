@@ -1,5 +1,4 @@
 using FluentValidation;
-using Microsoft.Extensions.Localization;
 using WeatherForecast.Application.Common.Enums;
 using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Application.Common.Results;
@@ -20,7 +19,7 @@ public class AuthService : IAuthService
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
-    private readonly IStringLocalizer<ApplicationMessages> _localizer;
+    private readonly IAppLocalizer _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
@@ -37,7 +36,7 @@ public class AuthService : IAuthService
         ITokenGenerator tokenGenerator,
         IValidator<RegisterRequest> registerValidator,
         IValidator<LoginRequest> loginValidator,
-        IStringLocalizer<ApplicationMessages> localizer)
+       IAppLocalizer localizer)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;

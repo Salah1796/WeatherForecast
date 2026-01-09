@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Localization;
 using WeatherForecast.Application.Common.Enums;
 using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Application.Common.Results;
@@ -14,14 +13,14 @@ namespace WeatherForecast.Application.Services;
 public class WeatherService : IWeatherService
 {
     private readonly IWeatherRepository _weatherRepository;
-    private readonly IStringLocalizer<ApplicationMessages> _localizer;
+    private readonly IAppLocalizer _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherService"/> class.
     /// </summary>
     /// <param name="weatherRepository">The weather repository for data access operations.</param>
     /// <param name="localizer">The localizer for retrieving localized messages.</param>
-    public WeatherService(IWeatherRepository weatherRepository, IStringLocalizer<ApplicationMessages> localizer)
+    public WeatherService(IWeatherRepository weatherRepository, IAppLocalizer localizer)
     {
         _weatherRepository = weatherRepository;
         _localizer = localizer;
@@ -38,6 +37,9 @@ public class WeatherService : IWeatherService
             return Result<WeatherResponse>.ErrorResponse(_localizer["CityNameRequired"], StatusCode.BadRequest);
 
         var weatherForecast = await _weatherRepository.GetByCityAsync(city);
+
+        if (weatherForecast == null)
+            return Result<WeatherResponse>.ErrorResponse(_localizer["WeatherDataNotFound"], StatusCode.NotFound);
 
         var weatherResponse = new WeatherResponse
         {
