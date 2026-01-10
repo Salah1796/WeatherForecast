@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
@@ -13,6 +14,7 @@ namespace WeatherForecast.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[EnableRateLimiting("fixed")]
 public class WeatherController : ControllerBase
 {
     private readonly IWeatherService _weatherService;
