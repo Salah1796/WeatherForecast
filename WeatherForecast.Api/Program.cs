@@ -106,6 +106,9 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Add Health Checks
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // -------------------- Localization --------------------
@@ -144,6 +147,7 @@ app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
