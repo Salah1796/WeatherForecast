@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.Text;
 using WeatherForecast.Api.Localization;
+using WeatherForecast.Api.Middleware;
 using WeatherForecast.Application;
 using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Infrastructure;
@@ -121,6 +122,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
