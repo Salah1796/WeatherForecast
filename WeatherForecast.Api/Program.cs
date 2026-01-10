@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Globalization;
 using System.Text;
 using WeatherForecast.Api.Localization;
@@ -112,6 +113,10 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks
 builder.Services.AddHealthChecks();
 
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
+
 var app = builder.Build();
 
 // -------------------- Localization --------------------
@@ -153,4 +158,16 @@ app.UseRateLimiter();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information("Starting web application");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
