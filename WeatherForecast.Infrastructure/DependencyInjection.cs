@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,6 +6,7 @@ using Scrutor;
 using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Application.Interfaces;
 using WeatherForecast.Domain.Repositories;
+using WeatherForecast.Infrastructure.Data;
 using WeatherForecast.Infrastructure.Repositories;
 using WeatherForecast.Infrastructure.Services;
 
@@ -25,11 +27,16 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Register DB Context
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(connectionString));
+
         // Register memory cache
         services.AddMemoryCache();
 
         // Register repositories
-        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+        services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddSingleton<IWeatherRepository, MockWeatherRepository>();
 
         // Register services
