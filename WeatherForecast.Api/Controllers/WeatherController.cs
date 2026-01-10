@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WeatherForecast.Application.Common.Localization;
+using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
 
@@ -14,32 +16,37 @@ namespace WeatherForecast.Api.Controllers;
 public class WeatherController : ControllerBase
 {
     private readonly IWeatherService _weatherService;
+    private readonly IAppLocalizer _localizer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherController"/> class.
     /// </summary>
     /// <param name="weatherService">The weather service.</param>
-    public WeatherController(IWeatherService weatherService)
+    public WeatherController(IWeatherService weatherService, IAppLocalizer localizer)
     {
         _weatherService = weatherService;
+        _localizer = localizer;
     }
 
+
     /// <summary>
-    /// Gets the weather forecast for a specific city.
+    /// Retrieves the current weather information for the specified city.
     /// </summary>
-    /// <param name="city">The name of the city to get weather data for.</param>
-    /// <returns>The weather forecast data for the specified city.</returns>
-    /// <response code="200">Weather data retrieved successfully.</response>
-    /// <response code="400">City name is required or invalid.</response>
-    /// <response code="401">User is not authenticated.</response>
-    /// <response code="404">Weather data not found for the specified city.</response>
+    /// <param name="city">The name of the city for which to obtain weather data. This value must not be null, empty, or consist only of
+    /// whitespace.</param>
+    /// <returns>An <see cref="IActionResult"/> containing a <see cref="Result{WeatherResponse}"/> with the weather information
+    /// if successful; otherwise, an error response indicating the reason for failure.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(WeatherResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetWeatherByCity([FromQuery] string city)
+    [ProducesResponseType<Result<WeatherResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Result<WeatherResponse>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Result<WeatherResponse>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<Result<WeatherResponse>>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWeatherByCity([FromQuery] string? city)
     {
+        if (string.IsNullOrWhiteSpace(city))
+        {
+            return BadRequest(Result<WeatherResponse>.ErrorResponse(_localizer["CityNameRequired"], Application.Common.Enums.StatusCode.BadRequest));
+        }
         var result = await _weatherService.GetWeatherByCityAsync(city);
 
         return StatusCode((int)result.StatusCode, result);

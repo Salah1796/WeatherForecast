@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
 
@@ -31,9 +32,9 @@ public class AuthController : ControllerBase
     /// <response code="400">Validation failed or invalid request.</response>
     /// <response code="409">Username already exists.</response>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
 
@@ -51,9 +52,9 @@ public class AuthController : ControllerBase
     /// <response code="400">Validation failed or invalid request.</response>
     /// <response code="401">Invalid credentials.</response>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Result<AuthResponse>>(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);

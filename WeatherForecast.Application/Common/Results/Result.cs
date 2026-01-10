@@ -21,12 +21,12 @@ public class Result<T>
     /// <summary>
     /// An optional message describing the result.
     /// </summary>
-    public string? Message { get; set; }
+    public string Message { get; set; }
 
     /// <summary>
     /// A list of error messages if the operation failed.
     /// </summary>
-    public List<string>? Errors { get; set; }
+    public List<string> Errors { get; set; } = [];
 
     /// <summary>
     /// The data returned by the operation if successful.

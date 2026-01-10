@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
+using WeatherForecast.Application.Common.Localization;
 using WeatherForecast.Application.Interfaces;
 using WeatherForecast.Domain.Repositories;
 using WeatherForecast.Infrastructure.Repositories;
@@ -41,7 +42,8 @@ public static class DependencyInjection
         services.Decorate<IWeatherService>((inner, sp) =>
         {
             var cache = sp.GetRequiredService<IMemoryCache>();
-            return new CachedWeatherService(inner, cache, configuration);
+            var iappLocalizer = sp.GetRequiredService<IAppLocalizer>();
+            return new CachedWeatherService(inner, cache, configuration, iappLocalizer);
         });
 
         return services;
