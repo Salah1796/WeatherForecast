@@ -1,6 +1,8 @@
 using FluentValidation;
+using Microsoft.Extensions.Options;
 using WeatherForecast.Application.Common.Enums;
 using WeatherForecast.Application.Common.Localization;
+using WeatherForecast.Application.Common.Options;
 using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
@@ -20,6 +22,7 @@ public class AuthService : IAuthService
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
     private readonly IAppLocalizer _localizer;
+    private readonly SecuritySettings _securitySettings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
@@ -30,13 +33,15 @@ public class AuthService : IAuthService
     /// <param name="registerValidator">The validator for registration requests.</param>
     /// <param name="loginValidator">The validator for login requests.</param>
     /// <param name="localizer">The localizer for retrieving localized messages.</param>
+    /// <param name="securitySettings">The security settings configuration.</param>
     public AuthService(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenGenerator tokenGenerator,
         IValidator<RegisterRequest> registerValidator,
         IValidator<LoginRequest> loginValidator,
-       IAppLocalizer localizer)
+       IAppLocalizer localizer,
+       IOptions<SecuritySettings> securitySettings)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
@@ -44,6 +49,7 @@ public class AuthService : IAuthService
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
         _localizer = localizer;
+        _securitySettings = securitySettings.Value;
     }
 
     /// <summary>
@@ -92,8 +98,30 @@ public class AuthService : IAuthService
             return Result<AuthResponse>.ValidationError(validationResult, _localizer["ValidationFailed"]);
 
         var user = await _userRepository.GetByUsernameAsync(request.Username);
-        if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        if (user == null)
             return Result<AuthResponse>.ErrorResponse(_localizer["InvalidCredentials"], StatusCode.Unauthorized);
+
+        // Check if account is locked
+        if (user.IsLockedOut())
+        {
+            var lockoutTimeRemaining = user.LockoutEnd!.Value.Subtract(DateTime.UtcNow);
+            var message = string.Format(_localizer["AccountLocked"], Math.Ceiling(lockoutTimeRemaining.TotalMinutes));
+            return Result<AuthResponse>.ErrorResponse(message, StatusCode.Unauthorized);
+        }
+
+        // Verify password
+        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            user.IncrementFailedAttempts(
+                _securitySettings.MaxFailedLoginAttempts,
+                TimeSpan.FromMinutes(_securitySettings.AccountLockoutDurationMinutes));
+            await _userRepository.UpdateAsync(user);
+            return Result<AuthResponse>.ErrorResponse(_localizer["InvalidCredentials"], StatusCode.Unauthorized);
+        }
+
+        // Successful login - reset failed attempts
+        user.ResetFailedAttempts();
+        await _userRepository.UpdateAsync(user);
 
         var token = _tokenGenerator.GenerateToken(user);
 

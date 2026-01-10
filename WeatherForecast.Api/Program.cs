@@ -9,10 +9,15 @@ using WeatherForecast.Api.Localization;
 using WeatherForecast.Api.Middleware;
 using WeatherForecast.Application;
 using WeatherForecast.Application.Common.Localization;
+using WeatherForecast.Application.Common.Options;
 using WeatherForecast.Infrastructure;
 using WeatherForecast.Infrastructure.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure SecuritySettings
+builder.Services.Configure<SecuritySettings>(builder.Configuration.GetSection("SecuritySettings"));
+var securitySettings = builder.Configuration.GetSection("SecuritySettings").Get<SecuritySettings>() ?? new SecuritySettings();
 
 // Add services to the container
 builder.Services.AddApplication();
@@ -103,7 +108,18 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
             factory: partition => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = securitySettings.WeatherRateLimitPerMinute,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst
+            }));
+    
+    options.AddPolicy("auth", httpContext =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: partition => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = securitySettings.AuthRateLimitPerMinute,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst

@@ -1,8 +1,10 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Moq;
 using WeatherForecast.Application.Common.Enums;
 using WeatherForecast.Application.Common.Localization;
+using WeatherForecast.Application.Common.Options;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
 using WeatherForecast.Application.Services;
@@ -35,13 +37,23 @@ public class AuthServiceTests
         _localizerMock.Setup(x => x[It.IsAny<string>()])
             .Returns((string key) => new LocalizedString(key, key));
 
+        // Setup SecuritySettings
+        var securitySettings = new SecuritySettings
+        {
+            MaxFailedLoginAttempts = 5,
+            AccountLockoutDurationMinutes = 15
+        };
+        var securityOptionsMock = new Mock<IOptions<SecuritySettings>>();
+        securityOptionsMock.Setup(x => x.Value).Returns(securitySettings);
+
         _authService = new AuthService(
             _userRepositoryMock.Object,
             _passwordHasherMock.Object,
             _tokenGeneratorMock.Object,
             _registerValidatorMock.Object,
             _loginValidatorMock.Object,
-            _localizerMock.Object);
+            _localizerMock.Object,
+            securityOptionsMock.Object);
     }
 
     [Fact]
@@ -153,6 +165,8 @@ public class AuthServiceTests
             .ReturnsAsync(user);
         _passwordHasherMock.Setup(x => x.VerifyPassword(request.Password, user.PasswordHash))
             .Returns(true);
+        _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync(user);
         _tokenGeneratorMock.Setup(x => x.GenerateToken(user))
             .Returns(token);
 
@@ -169,6 +183,7 @@ public class AuthServiceTests
         _userRepositoryMock.Verify(x => x.GetByUsernameAsync(request.Username), Times.Once);
         _loginValidatorMock.Verify(x => x.ValidateAsync(request, CancellationToken.None), Times.Once);
         _passwordHasherMock.Verify(x => x.VerifyPassword(request.Password, user.PasswordHash), Times.Once);
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
         _tokenGeneratorMock.Verify(x => x.GenerateToken(user), Times.Once);
         _localizerMock.Verify(x => x["LoginSuccessful"], Times.Once);
     }
@@ -213,6 +228,8 @@ public class AuthServiceTests
             .ReturnsAsync(user);
         _passwordHasherMock.Setup(x => x.VerifyPassword(request.Password, user.PasswordHash))
             .Returns(false);
+        _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync(user);
 
         // Act
         var result = await _authService.LoginAsync(request);
@@ -224,6 +241,7 @@ public class AuthServiceTests
         _userRepositoryMock.Verify(x => x.GetByUsernameAsync(request.Username), Times.Once);
         _loginValidatorMock.Verify(x => x.ValidateAsync(request, CancellationToken.None), Times.Once);
         _passwordHasherMock.Verify(x => x.VerifyPassword(request.Password, user.PasswordHash), Times.Once);
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
         _tokenGeneratorMock.Verify(x => x.GenerateToken(user), Times.Never);
         _localizerMock.Verify(x => x["InvalidCredentials"], Times.Once);
     }

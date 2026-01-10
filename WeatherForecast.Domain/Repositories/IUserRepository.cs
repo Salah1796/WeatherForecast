@@ -28,5 +28,12 @@ public interface IUserRepository
     /// <param name="user">The user to create.</param>
     /// <returns>The created user.</returns>
     Task<User> CreateAsync(User user);
+    
+    /// <summary>
+    /// Updates an existing user.
+    /// </summary>
+    /// <param name="user">The user to update.</param>
+    /// <returns>The updated user.</returns>
+    Task<User> UpdateAsync(User user);
 }
 

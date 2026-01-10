@@ -24,6 +24,8 @@ namespace WeatherForecast.Domain.Entities
 
             Username = username;
             PasswordHash = passwordHash;
+            FailedLoginAttempts = 0;
+            LockoutEnd = null;
         }
 
         /// <summary>
@@ -42,5 +44,46 @@ namespace WeatherForecast.Domain.Entities
         /// </summary>
         public string PasswordHash { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the number of consecutive failed login attempts.
+        /// </summary>
+        public int FailedLoginAttempts { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the date and time when the account lockout ends.
+        /// </summary>
+        public DateTime? LockoutEnd { get; private set; }
+
+        /// <summary>
+        /// Checks if the account is currently locked out.
+        /// </summary>
+        /// <returns>True if the account is locked, otherwise false.</returns>
+        public bool IsLockedOut()
+        {
+            return LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Increments the failed login attempts counter and locks the account if threshold is reached.
+        /// </summary>
+        /// <param name="maxAttempts">Maximum allowed failed attempts before lockout.</param>
+        /// <param name="lockoutDuration">Duration of the lockout period.</param>
+        public void IncrementFailedAttempts(int maxAttempts, TimeSpan lockoutDuration)
+        {
+            FailedLoginAttempts++;
+            if (FailedLoginAttempts >= maxAttempts)
+            {
+                LockoutEnd = DateTime.UtcNow.Add(lockoutDuration);
+            }
+        }
+
+        /// <summary>
+        /// Resets the failed login attempts counter and clears any lockout.
+        /// </summary>
+        public void ResetFailedAttempts()
+        {
+            FailedLoginAttempts = 0;
+            LockoutEnd = null;
+        }
     }
 }

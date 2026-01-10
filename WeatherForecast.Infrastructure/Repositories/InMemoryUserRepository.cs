@@ -57,5 +57,24 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
+    /// <summary>
+    /// Updates an existing user.
+    /// </summary>
+    /// <param name="user">The user to update.</param>
+    /// <returns>The updated user.</returns>
+    public Task<User> UpdateAsync(User user)
+    {
+        lock (_lock)
+        {
+            var key = user.Username.ToLowerInvariant();
+            if (!_users.ContainsKey(key))
+            {
+                throw new InvalidOperationException($"User with username '{user.Username}' does not exist.");
+            }
+            _users[key] = user;
+            return Task.FromResult(user);
+        }
+    }
+
 }
 

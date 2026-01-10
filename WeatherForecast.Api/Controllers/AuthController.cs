@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WeatherForecast.Application.Common.Results;
 using WeatherForecast.Application.DTOs;
 using WeatherForecast.Application.Interfaces;
@@ -10,6 +11,7 @@ namespace WeatherForecast.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

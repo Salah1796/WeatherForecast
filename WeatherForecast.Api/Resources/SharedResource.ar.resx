@@ -150,6 +150,9 @@
   <data name="PasswordTooWeak" xml:space="preserve">
     <value>يجب أن تتكون كلمة المرور من 8 أحرف على الأقل وتحتوي على حرف كبير وحرف صغير ورقم ورمز خاص</value>
   </data>
+  <data name="AccountLocked" xml:space="preserve">
+    <value>تم قفل الحساب بسبب محاولات تسجيل دخول فاشلة كثيرة. يُرجى المحاولة مرة أخرى بعد {0} دقيقة.</value>
+  </data>
   <data name="PasswordRequired" xml:space="preserve">
     <value> كلمة المرور  مطلوبة</value>
   </data>

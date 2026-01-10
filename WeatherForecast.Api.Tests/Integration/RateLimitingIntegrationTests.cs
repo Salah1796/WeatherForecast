@@ -28,14 +28,14 @@ public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebAppl
         var authenticatedClient = _factory.CreateClient();
         authenticatedClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-        // 2. Act: Send 10 allowed requests
-        for (int i = 0; i < 10; i++)
+        // 2. Act: Send 100 allowed requests
+        for (int i = 0; i < 100; i++)
         {
             var response = await authenticatedClient.GetAsync("/api/weather?city=Cairo");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        // 3. Act: Send the 11th request
+        // 3. Act: Send the 101th request
         var blockedResponse = await authenticatedClient.GetAsync("/api/weather?city=Cairo");
 
         // 4. Assert
@@ -51,7 +51,7 @@ public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebAppl
         var clientA = _factory.CreateClient();
         clientA.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenA}");
 
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 100; i++)
         {
             await clientA.GetAsync("/api/weather?city=Cairo");
         }
