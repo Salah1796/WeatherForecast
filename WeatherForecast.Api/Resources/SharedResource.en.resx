@@ -144,6 +144,12 @@
   <data name="UsernameRequired" xml:space="preserve">
     <value>Username is Required</value>
   </data>
+  <data name="UsernameTooShort" xml:space="preserve">
+    <value>Username must be at least 3 characters long</value>
+  </data>
+  <data name="PasswordTooWeak" xml:space="preserve">
+    <value>Password must be at least 8 characters and contain uppercase, lowercase, number, and special character</value>
+  </data>
   <data name="PasswordRequired" xml:space="preserve">
     <value>Password is required</value>
   </data>

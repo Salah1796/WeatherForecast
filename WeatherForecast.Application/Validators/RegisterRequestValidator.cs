@@ -9,10 +9,18 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
     public RegisterRequestValidator(IAppLocalizer _localizer)
     {
         RuleFor(x => x.Username)
-            .NotEmpty().WithMessage(_localizer["UsernameRequired"]);
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(_localizer["UsernameRequired"])
+            .MinimumLength(3).WithMessage(_localizer["UsernameTooShort"]);
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage(_localizer["PasswordRequired"]);
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(_localizer["PasswordRequired"])
+            .MinimumLength(8).WithMessage(_localizer["PasswordTooWeak"])
+            .Matches(@"[A-Z]").WithMessage(_localizer["PasswordTooWeak"])
+            .Matches(@"[a-z]").WithMessage(_localizer["PasswordTooWeak"])
+            .Matches(@"[0-9]").WithMessage(_localizer["PasswordTooWeak"])
+            .Matches(@"[\!\?\*\.]").WithMessage(_localizer["PasswordTooWeak"]);
     }
 }
 
