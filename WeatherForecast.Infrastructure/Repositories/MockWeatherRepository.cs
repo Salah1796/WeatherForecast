@@ -14,7 +14,7 @@ namespace WeatherForecast.Infrastructure.Repositories;
 public class MockWeatherRepository : IWeatherRepository
 {
     // Initialize dictionary with case-insensitive comparer to match constructor usage
-    private readonly Dictionary<string, WeatherForecastValueObject> _weatherData = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Lazy<Dictionary<string, WeatherForecastValueObject>> _weatherData;
     private readonly ILogger<MockWeatherRepository>? _logger;
 
 
@@ -24,13 +24,18 @@ public class MockWeatherRepository : IWeatherRepository
     public MockWeatherRepository(ILogger<MockWeatherRepository> logger)
     {
         _logger = logger;
+        _weatherData = new Lazy<Dictionary<string, WeatherForecastValueObject>>(LoadData);
+    }
 
+    private Dictionary<string, WeatherForecastValueObject> LoadData()
+    {
         var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "weather-data.json");
+        var emptyResult = new Dictionary<string, WeatherForecastValueObject>(StringComparer.OrdinalIgnoreCase);
 
         if (!File.Exists(jsonPath))
         {
             _logger?.LogError("Weather data file not found at path: {JsonPath}", jsonPath);
-            return;
+            return emptyResult;
         }
 
         var jsonContent = File.ReadAllText(jsonPath);
@@ -38,21 +43,29 @@ public class MockWeatherRepository : IWeatherRepository
         if (string.IsNullOrWhiteSpace(jsonContent))
         {
             _logger?.LogError("Weather data file is empty at path: {JsonPath}", jsonPath);
-            return;
+            return emptyResult;
         }
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var weatherItems = JsonSerializer.Deserialize<List<WeatherForecastDto>>(jsonContent, options);
-        if (weatherItems == null || weatherItems.Count == 0)
+        try
         {
-            _logger?.LogError("No weather data found in the JSON file at path: {JsonPath}", jsonPath);
-            return;
-        }
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var weatherItems = JsonSerializer.Deserialize<List<WeatherForecastDto>>(jsonContent, options);
+            if (weatherItems == null || weatherItems.Count == 0)
+            {
+                _logger?.LogError("No weather data found in the JSON file at path: {JsonPath}", jsonPath);
+                return emptyResult;
+            }
 
-        _weatherData = weatherItems.ToDictionary(
-            item => item.City,
-            item => new WeatherForecastValueObject(item.City, item.Temperature, item.Condition), 
-            StringComparer.OrdinalIgnoreCase);
+            return weatherItems.ToDictionary(
+                item => item.City,
+                item => new WeatherForecastValueObject(item.City, item.Temperature, item.Condition), 
+                StringComparer.OrdinalIgnoreCase);
+        }
+        catch (JsonException ex)
+        {
+            _logger?.LogError(ex, "Error parsing weather data JSON at path: {JsonPath}", jsonPath);
+            return emptyResult;
+        }
     }
 
     /// <summary>
@@ -64,7 +77,7 @@ public class MockWeatherRepository : IWeatherRepository
     {
         if (city == null) return Task.FromResult<WeatherForecastValueObject?>(null);
 
-        if (_weatherData.TryGetValue(city, out var weather))
+        if (_weatherData.Value.TryGetValue(city, out var weather))
         {
             return Task.FromResult<WeatherForecastValueObject?>(weather);
         }
