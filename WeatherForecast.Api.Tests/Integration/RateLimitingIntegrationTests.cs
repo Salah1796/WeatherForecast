@@ -23,12 +23,7 @@ public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebAppl
     {
         // 1. Arrange: Authenticate to get a valid token
         var username = $"ratelimituser_{Guid.NewGuid():N}";
-        var password = "Password123!";
-
-        await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest { Username = username, Password = password });
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Username = username, Password = password });
-        var loginResult = await loginResponse.Content.ReadFromJsonAsync<Result<AuthResponse>>();
-        var token = loginResult!.Data!.Token;
+        var token = await RegisterAndLogin(username);
 
         var authenticatedClient = _factory.CreateClient();
         authenticatedClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -37,25 +32,6 @@ public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebAppl
         for (int i = 0; i < 10; i++)
         {
             var response = await authenticatedClient.GetAsync("/api/weather?city=Cairo");
-            // Ensure the setup is correct and we aren't failing for other reasons
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-               // If we get an error here, it might be due to a shared state or previous tests if the rate limiter isn't isolated.
-               // However, integration tests usually spin up a new server/client pair? 
-               // WebApplicationFactory shares the server instance across tests in the same class fixture, 
-               // but XUnit runs classes in parallel.
-               // If we are sharing the server, the rate limit counter might be shared.
-               // Let's assume isolation or that this runs first/alone enough. 
-               // Worst case we might need to slow down or use a different user/IP if partitioning was by that.
-               // The FixedWindowLimiter is global if not partitioned. My configuration: 
-               // options.AddFixedWindowLimiter("fixed", ...) -> No partition key specified implies global? 
-               // Wait, AddFixedWindowLimiter overload used in Program.cs:
-               // .AddFixedWindowLimiter("fixed", policy => { ... }) without PartitionedOptions.
-               // Wait, the API defaults to: partitioner: httpContext => RateLimitPartition.GetFixedWindowLimiter("global", ...) 
-               // if not specified using the Partitioned overload.
-               // My code used `options.AddFixedWindowLimiter("fixed", policy => ...)`
-               // Let's check Program.cs code again.
-            }
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -64,5 +40,40 @@ public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebAppl
 
         // 4. Assert
         Assert.Equal(HttpStatusCode.TooManyRequests, blockedResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task RateLimit_IsPartitionedByUser()
+    {
+        // 1. User A exceeds limit
+        var userA = $"userA_{Guid.NewGuid():N}";
+        var tokenA = await RegisterAndLogin(userA);
+        var clientA = _factory.CreateClient();
+        clientA.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenA}");
+
+        for (int i = 0; i < 10; i++)
+        {
+            await clientA.GetAsync("/api/weather?city=Cairo");
+        }
+        var responseA = await clientA.GetAsync("/api/weather?city=Cairo");
+        Assert.Equal(HttpStatusCode.TooManyRequests, responseA.StatusCode);
+
+        // 2. User B should still be allowed (different partition)
+        var userB = $"userB_{Guid.NewGuid():N}";
+        var tokenB = await RegisterAndLogin(userB);
+        var clientB = _factory.CreateClient();
+        clientB.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenB}");
+
+        var responseB = await clientB.GetAsync("/api/weather?city=Cairo");
+        Assert.Equal(HttpStatusCode.OK, responseB.StatusCode);
+    }
+
+    private async Task<string> RegisterAndLogin(string username)
+    {
+        var password = "Password123!";
+        await _client.PostAsJsonAsync("/api/auth/register", new RegisterRequest { Username = username, Password = password });
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Username = username, Password = password });
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<Result<AuthResponse>>();
+        return loginResult!.Data!.Token;
     }
 }
