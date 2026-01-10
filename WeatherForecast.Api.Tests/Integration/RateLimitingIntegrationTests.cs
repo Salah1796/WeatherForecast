@@ -7,7 +7,8 @@ using Xunit;
 
 namespace WeatherForecast.Api.Tests.Integration;
 
-public class RateLimitingIntegrationTests : IClassFixture<WeatherForecastWebApplicationFactory>
+[Collection("Integration Tests")]
+public class RateLimitingIntegrationTests
 {
     private readonly WeatherForecastWebApplicationFactory _factory;
     private readonly HttpClient _client;

@@ -43,7 +43,7 @@ public class InMemoryUserRepository : IUserRepository
     /// </summary>
     /// <param name="user">The user to create.</param>
     /// <returns>The created user.</returns>
-    public Task<User> CreateAsync(User user)
+    public void Add(User user)
     {
         lock (_lock)
         {
@@ -53,7 +53,6 @@ public class InMemoryUserRepository : IUserRepository
                 throw new InvalidOperationException($"User with username '{user.Username}' already exists.");
             }
             _users[key] = user;
-            return Task.FromResult(user);
         }
     }
 
@@ -62,7 +61,7 @@ public class InMemoryUserRepository : IUserRepository
     /// </summary>
     /// <param name="user">The user to update.</param>
     /// <returns>The updated user.</returns>
-    public Task<User> UpdateAsync(User user)
+    public void Update(User user)
     {
         lock (_lock)
         {
@@ -72,7 +71,6 @@ public class InMemoryUserRepository : IUserRepository
                 throw new InvalidOperationException($"User with username '{user.Username}' does not exist.");
             }
             _users[key] = user;
-            return Task.FromResult(user);
         }
     }
 

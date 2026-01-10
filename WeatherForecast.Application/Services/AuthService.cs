@@ -16,7 +16,7 @@ namespace WeatherForecast.Application.Services;
 /// </summary>
 public class AuthService : IAuthService
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IValidator<RegisterRequest> _registerValidator;
@@ -27,7 +27,7 @@ public class AuthService : IAuthService
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthService"/> class.
     /// </summary>
-    /// <param name="userRepository">The user repository for data access operations.</param>
+    /// <param name="unitOfWork">The unit of work for database operations.</param>
     /// <param name="passwordHasher">The password hasher for secure password operations.</param>
     /// <param name="tokenGenerator">The token generator for JWT token creation.</param>
     /// <param name="registerValidator">The validator for registration requests.</param>
@@ -35,7 +35,7 @@ public class AuthService : IAuthService
     /// <param name="localizer">The localizer for retrieving localized messages.</param>
     /// <param name="securitySettings">The security settings configuration.</param>
     public AuthService(
-        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
         ITokenGenerator tokenGenerator,
         IValidator<RegisterRequest> registerValidator,
@@ -43,7 +43,7 @@ public class AuthService : IAuthService
        IAppLocalizer localizer,
        IOptions<SecuritySettings> securitySettings)
     {
-        _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;
         _registerValidator = registerValidator;
@@ -66,21 +66,23 @@ public class AuthService : IAuthService
             return Result<AuthResponse>.ValidationError(validationResult, _localizer["ValidationFailed"]);
         }
 
-        var userExists = await _userRepository.UserExistsAsync(request.Username);
+        var userExists = await _unitOfWork.Users.UserExistsAsync(request.Username);
         if (userExists)
             return Result<AuthResponse>.ErrorResponse(_localizer["UsernameAlreadyExists"], StatusCode.Conflict);
 
         var passwordHash = _passwordHasher.HashPassword(request.Password);
         var user = new User(request.Username, passwordHash);
-        var createdUser = await _userRepository.CreateAsync(user);
+        
+         _unitOfWork.Users.Add(user);
+        await _unitOfWork.SaveChangesAsync();
 
-        var token = _tokenGenerator.GenerateToken(createdUser);
+        var token = _tokenGenerator.GenerateToken(user);
 
         var authResponse = new AuthResponse
         {
             Token = token,
-            UserId = createdUser.Id,
-            Username = createdUser.Username
+            UserId = user.Id,
+            Username = user.Username
         };
 
         return Result<AuthResponse>.SuccessResponse(authResponse, _localizer["UserRegisteredSuccessfully"]);
@@ -97,7 +99,7 @@ public class AuthService : IAuthService
         if (!validationResult.IsValid)
             return Result<AuthResponse>.ValidationError(validationResult, _localizer["ValidationFailed"]);
 
-        var user = await _userRepository.GetByUsernameAsync(request.Username);
+        var user = await _unitOfWork.Users.GetByUsernameAsync(request.Username);
         if (user == null)
             return Result<AuthResponse>.ErrorResponse(_localizer["InvalidCredentials"], StatusCode.Unauthorized);
 
@@ -115,13 +117,17 @@ public class AuthService : IAuthService
             user.IncrementFailedAttempts(
                 _securitySettings.MaxFailedLoginAttempts,
                 TimeSpan.FromMinutes(_securitySettings.AccountLockoutDurationMinutes));
-            await _userRepository.UpdateAsync(user);
+            
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+            
             return Result<AuthResponse>.ErrorResponse(_localizer["InvalidCredentials"], StatusCode.Unauthorized);
         }
 
         // Successful login - reset failed attempts
         user.ResetFailedAttempts();
-        await _userRepository.UpdateAsync(user);
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
 
         var token = _tokenGenerator.GenerateToken(user);
 

@@ -21,19 +21,17 @@ public interface IUserRepository
     /// <param name="username">The username of the user to check.</param>
     /// <returns>True if the user exists, false otherwise.</returns>
     Task<bool> UserExistsAsync(string username);
-    
+
     /// <summary>
     /// Creates a new user.
     /// </summary>
     /// <param name="user">The user to create.</param>
-    /// <returns>The created user.</returns>
-    Task<User> CreateAsync(User user);
+    void Add(User user);
     
     /// <summary>
     /// Updates an existing user.
     /// </summary>
     /// <param name="user">The user to update.</param>
-    /// <returns>The updated user.</returns>
-    Task<User> UpdateAsync(User user);
+    void Update(User user);
 }
 
