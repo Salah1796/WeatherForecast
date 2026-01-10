@@ -65,7 +65,7 @@ public class Result<T>
             Success = false,
             StatusCode = statusCode,
             Message = message,
-            Errors = errors ?? new List<string>()
+            Errors = errors ?? []
         };
     }
 
@@ -75,10 +75,10 @@ public class Result<T>
     /// <param name="validationResult">The FluentValidation validation result.</param>
     /// <param name="validationFailedMessage">The message to display for validation failure (optional).</param>
     /// <returns>An error result containing validation errors.</returns>
-    public static Result<T> ValidationError(FluentValidation.Results.ValidationResult validationResult, string? validationFailedMessage = null)
+    public static Result<T> ValidationError(FluentValidation.Results.ValidationResult validationResult, string validationFailedMessage)
     {
         var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-        return ErrorResponse(validationFailedMessage ?? "Validation failed.", StatusCode.BadRequest, errors);
+        return ErrorResponse(validationFailedMessage, StatusCode.BadRequest, errors);
     }
 }
 

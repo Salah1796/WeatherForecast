@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="WeatherForecast.Api/WeatherForecast.Api.csproj" />
+  <Project Path="WeatherForecast.Application.Tests/WeatherForecast.Application.Tests.csproj" />
   <Project Path="WeatherForecast.Application/WeatherForecast.Application.csproj" />
   <Project Path="WeatherForecast.Domain.Tests/WeatherForecast.Domain.Tests.csproj" />
   <Project Path="WeatherForecast.Domain/WeatherForecast.Domain.csproj" />
